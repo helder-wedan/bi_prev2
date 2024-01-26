@@ -18,8 +18,7 @@ import pandas as pd
 from dateutil.relativedelta import relativedelta
 import datetime as dt
 from babel.numbers import format_currency
-
-
+import openpyxl
 path = 'database' 
 
 #load_figure_template(["flatly"])
@@ -33,6 +32,14 @@ rent_meta_tx = pd.read_csv(path+'/rentabilidade_meta.csv',encoding='latin-1')
 rent_meta_tx.competencia = pd.to_datetime(
     rent_meta_tx.competencia, dayfirst=False, errors="coerce", format="%Y-%m-%d"
 )
+
+bade_dados_ativos = pd.read_excel(path+'/BASES_ativos.xlsx')
+bade_dados_assistidos = pd.read_excel(path+'/BASES_assistidos.xlsx')
+
+lista_bases = list(bade_dados_ativos.Base.unique())#.extend(list(bade_dados_assistidos.Base.unique()))
+lista_bases = lista_bases + list(bade_dados_assistidos.Base.unique())
+lista_bases = list(set(lista_bases))
+print(lista_bases)
 
 #anos = list(balancete_pivot_test.ANO.unique())
 anos = balancete_pivot_test.competencia.drop_duplicates().sort_values(ascending=False).dt.strftime('%m-%Y').drop_duplicates().tolist()
@@ -254,7 +261,7 @@ def header():
                                     },
                                 ),
                             dbc.NavItem(
-                                dbc.NavLink('',#'População   ',
+                                dbc.NavLink('População   ',
                                              href='/populacao', 
                                              className="nav-link"),
                                              style={"margin": "-20px",
@@ -583,160 +590,114 @@ tela_indicadores = html.Div(children=[
 
 ##### Tela 2 ####
 
+tela_estatisticas = html.Div(children=[
+            header(),
+                    dbc.Row([
+                                    dbc.Col([
+                    html.H5(
+                        dbc.Badge(
+                            "Selecionar a Base:",
+                            color="#5d8aa7",
+                            className="me-1",
+                            style={
+                                "margin-left": "0px",#"25px",
+                                "margin-top": "10px",
+                                },
+                                    )
+                            ),
+                        dcc.Dropdown(
+                            id="select-base",
+                            #value=lista_bases[0],
+                            multi=False,
+                            options=[
+                                {
+                                    "label": i,
+                                    "value": i,
+                                }
+                                for i in lista_bases
+                            ],
+                            placeholder="Selecione o Base",
+                            style={
+                                #"width": "60%",
+                                #'padding': '3px',
+                                "margin-left": "0px",#"15px",
+                                #'font-size':'18px',
+                                "textAlign": "center",
+                            },
+                            ),
+                            ],width=True),# xs = 2, sm=2, md=2, lg=2),# width=2),
+
+                dbc.Col([
+                    html.H5(
+                        dbc.Badge(
+                            "Selecionar competência:",
+                            color="#5d8aa7",
+                            className="me-1",
+                            style={
+                                "margin-left": "35px",
+                                "margin-top": "10px",
+                                },
+                                    )
+                            ),
+                        dcc.Dropdown(
+                            id="select-ano-base",
+                            #value=anos[0],
+                            placeholder="Selecione o mês",
+                            style={
+                                #"width": "60%",
+                                #'padding': '3px',
+                                "margin-left": "15px",
+                                #'font-size':'18px',
+                                "textAlign": "center",
+                            },
+                            ),
+
+                        ], width=True),#xs = 2, sm=2, md=2, lg=2),#width=2),
+                                    dbc.Col([
+                    html.H5(
+                        dbc.Badge(
+                            "Selecionar competência anterior:",
+                            color="#5d8aa7",
+                            className="me-1",
+                            style={
+                                "margin-left": "30px",
+                                "margin-top": "10px",
+                                },
+                                    )
+                            ),
+                        dcc.Dropdown(
+                            id="select-ano-base-anterior",
+                            #value=anos[1],
+                            placeholder="Selecione o mês a comparar",
+                            style={
+                                #"width": "80%",
+                                #'padding': '3px',
+                                "margin-left": "15px",
+                                #'font-size':'18px',
+                                "textAlign": "center",
+                            },
+                            ),
+
+                        ], width=True),#xs = 2, sm=2, md=2, lg=2),#width=2),                                 
+]),
+                            ],style={
+                    "background-color": '#f7f7f7'# "#F8F8FB",
+                    },
+            )
+
 
 # =========  Layout  =========== #
 def render_layout(username):
     template = tela_indicadores
     return template 
 
+def render_populacao(username):
+    template = tela_estatisticas
+    return template 
+
+
 # =========  Callbacks Page1  =========== #
 # CALLBACKS =====
-@app.callback(
-    Output("select-ano-base", "options"),
-    #Output("select-ano-base", "value"),],
-    Input("select-base", "value")
-)
-def update_dropdown_meses_bases(base):
-    if base is None:
-        return []
-    
-    elif 'ASSISTIDOS' in base.upper():
-        dados = base_dados_assistidos
-
-    else:
-        dados = base_dados_ativos
-
-    competencias = list(dados[dados.Base == base]['Competência'].sort_values(ascending=False).dt.strftime('%m-%Y').unique())
-
-    return competencias#,competencias[0]
-
-@app.callback(
-    Output("select-ano-base-anterior", "options"),
-    #Output("select-ano-anterior", "value"),],
-    [Input("select-base", "value"),
-    Input("select-ano-base", "value")]
-)
-def update_dropdown_meses_anteriores_bases(base , mes_ano_selecionado):
-    if base is None:
-        return []
-    
-    elif 'ASSISTIDOS' in base.upper():
-        dados = base_dados_assistidos
-
-    else:
-        dados = base_dados_ativos
-
-    competencias = list(dados[dados.Base == base]['Competência'].sort_values(ascending=False).dt.strftime('%m-%Y').unique())
-
-    if mes_ano_selecionado is not None:
-        index_mes_selecionado = competencias.index(mes_ano_selecionado)
-        meses_anteriores = [
-            {"label": mes_ano, "value": mes_ano}
-            for mes_ano in competencias[index_mes_selecionado+1:]
-        ]
-
-        return meses_anteriores
-    else:
-        return []
-
-@app.callback(
-    
-        Output('tabela_populacao','children')
-    ,    
-    [
-        Input('select-ano-base', 'value'),
-        Input('select-base', 'value'),
-        Input("select-ano-base-anterior", 'value'),
-    ],
-)
-def update_table(mes,base,mes_anterior):
-
-    if base is None:
-        return []
-    
-    elif 'ASSISTIDOS' in base.upper():
-        dados = base_dados_assistidos
-
-    else:
-        dados = base_dados_ativos
-
-    if mes is None:
-        return []
-
-    if mes_anterior is not None:
-
-        base_filtrada = dados[(dados.Base == base)&(dados['Competência'].dt.strftime('%m-%Y') == mes)].copy()
-        base_filtrada_anterior = dados[(dados.Base == base)&(dados['Competência'].dt.strftime('%m-%Y') == mes_anterior)].copy()
-
-        base_filtrada['Competência'] = base_filtrada['Competência'].dt.strftime("%m/%Y")
-        base_filtrada_anterior['Competência'] = base_filtrada_anterior['Competência'].dt.strftime("%m/%Y")
-        base_filtrada.set_index('Competência',inplace=True)
-        base_filtrada_anterior.set_index('Competência',inplace=True)
-
-        base_filtrada = base_filtrada.T
-        base_filtrada_anterior = base_filtrada_anterior.T
-
-        tabela = pd.concat([base_filtrada,#.rename(columns={base_filtrada.columns[0]:data1}),
-                            base_filtrada_anterior,#.rename(columns={base_filtrada_anterior.columns[0]:data2})
-                            ],axis=1).reset_index(names=base)
-        
-        tabela['Var (%)'] = tabela.iloc[1:,1] / tabela.iloc[1:,2] - 1
-        
-        tabela = tabela.iloc[1:,:]
-
-        tabela['Var (%)'] = tabela['Var (%)'].astype(float).map('{:.2%}'.format)
-        tabela['Var (%)'] = tabela['Var (%)'].astype(str).replace(".",",")
-
-
-        print(tabela)
-
-        tabela_dash = dash_table.DataTable(
-        columns=[
-            {"name": i,
-                "id": i,
-                "deletable": False,
-                }
-            for i in tabela.columns
-        ],
-        data=tabela.to_dict("records"),
-        style_as_list_view=True,
-        style_header={
-            "backgroundColor": "#003e4c",
-            "color": "white",
-            "fontWeight": "bold",
-            "text-align": "center",
-            "fontSize": 14,
-        },
-    #    style_data_conditional=[
-    #        {"if": {"column_id": tabela.columns[0]},
-    #            "textAlign": "left",#}, 
-    #        {"if": {"row_index": 0}, 
-    #           "fontWeight": "bold",},
-    #      {"if": {"row_index": 1},
-    #         "fontWeight": "bold",},
-        #    {"if": {"row_index": len(tabela_df) - 2},
-        #       "fontWeight": "bold",},
-        #  {"if": {"row_index": len(tabela_df) - 1},
-        #     "fontWeight": "bold"
-                #}],
-
-        style_cell={
-            "padding": "8px",
-            "font-family": "Helvetica",
-            "fontSize": 13,
-            "color": "#5d8aa7",
-            "fontWeight": "bold",
-        },
-        fill_width=False,
-    )
-        return tabela_dash
-    
-    else:
-        return []
-        
-
-
-
 @app.callback(
     [Output("select-ano-anterior", "options"),
     Output("select-ano-anterior", "value"),],

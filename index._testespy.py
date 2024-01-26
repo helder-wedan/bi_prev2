@@ -71,11 +71,18 @@ def render_page_content(pathname, login_state, register_state):
 #    if pathname == "/register":
 #        return register.render_layout(register_state)
 
-    if pathname == "/indicadores":
+    if pathname == "/indicadores": 
         if current_user.is_authenticated:
             return data.render_layout(current_user.username)
         else:
             return login.render_layout(register_state)
+    
+    if pathname == "/populacao":
+        if current_user.is_authenticated:
+            return data.render_populacao(current_user.username)
+        else:
+            return login.render_layout(register_state)
+        
     
 if __name__ == "__main__":
     app.run_server(debug=True, port=8050)#, host="0.0.0.0")

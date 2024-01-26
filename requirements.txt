@@ -37,3 +37,4 @@ idna<4,>=2.5
 certifi>=2017.4.17 
 urllib3<1.27,>=1.21.1 
 charset-normalizer~=2.0.0
+openpyxl

@@ -18,8 +18,7 @@ import pandas as pd
 from dateutil.relativedelta import relativedelta
 import datetime as dt
 from babel.numbers import format_currency
-
-
+import openpyxl
 path = 'database' 
 
 #load_figure_template(["flatly"])
@@ -33,6 +32,13 @@ rent_meta_tx = pd.read_csv(path+'/rentabilidade_meta.csv',encoding='latin-1')
 rent_meta_tx.competencia = pd.to_datetime(
     rent_meta_tx.competencia, dayfirst=False, errors="coerce", format="%Y-%m-%d"
 )
+
+base_dados_ativos = pd.read_excel(path+'/BASES_ativos.xlsx')
+base_dados_assistidos = pd.read_excel(path+'/BASES_assistidos.xlsx')
+
+lista_bases = list(base_dados_ativos.Base.unique())#.extend(list(base_dados_assistidos.Base.unique()))
+lista_bases = lista_bases + list(base_dados_assistidos.Base.unique())
+lista_bases = sorted(list(set(lista_bases)))
 
 #anos = list(balancete_pivot_test.ANO.unique())
 anos = balancete_pivot_test.competencia.drop_duplicates().sort_values(ascending=False).dt.strftime('%m-%Y').drop_duplicates().tolist()
@@ -287,6 +293,101 @@ def header():
 
 tela_indicadores = html.Div(children=[
             header(),
+            dbc.Row([
+                dbc.Col([
+                    html.H5(
+                        dbc.Badge(
+                            "Selecionar a Base:",
+                            color="#5d8aa7",
+                            className="me-1",
+                            style={
+                                "margin-left": "30px",#"25px",
+                                "margin-top": "10px",
+                                },
+                                    )
+                            ),
+                        dcc.Dropdown(
+                            id="select-base",
+                            #value=lista_bases[0],
+                            multi=False,
+                            options=[
+                                {
+                                    "label": i,
+                                    "value": i,
+                                }
+                                for i in lista_bases
+                            ],
+                            placeholder="Selecione o Base",
+                            style={
+                                #"width": "60%",
+                                #'padding': '3px',
+                                "margin-left": "15px",#"15px",
+                                #'font-size':'18px',
+                                "textAlign": "center",
+                            },
+                            ),
+                            ],width=True),# xs = 2, sm=2, md=2, lg=2),# width=2),
+
+                dbc.Col([
+                    html.H5(
+                        dbc.Badge(
+                            "Selecionar competência:",
+                            color="#5d8aa7",
+                            className="me-1",
+                            style={
+                                "margin-left": "35px",
+                                "margin-top": "10px",
+                                },
+                                    )
+                            ),
+                        dcc.Dropdown(
+                            id="select-ano-base",
+                            #value=anos[0],
+                            placeholder="Selecione o mês",
+                            style={
+                                #"width": "60%",
+                                #'padding': '3px',
+                                "margin-left": "15px",
+                                #'font-size':'18px',
+                                "textAlign": "center",
+                            },
+                            ),
+
+                        ], width=True),#xs = 2, sm=2, md=2, lg=2),#width=2),
+                                    dbc.Col([
+                    html.H5(
+                        dbc.Badge(
+                            "Selecionar competência anterior:",
+                            color="#5d8aa7",
+                            className="me-1",
+                            style={
+                                #"margin-left": "30px",
+                                "margin-top": "10px",
+                                },
+                                    )
+                            ),
+                        dcc.Dropdown(
+                            id="select-ano-base-anterior",
+                            #value=anos[1],
+                            placeholder="Selecione o mês a comparar",
+                            style={
+                                #"width": "80%",
+                                #'padding': '3px',
+                                #"margin-left": "15px",
+                                #'font-size':'18px',
+                                "textAlign": "center",
+                            },
+                            ),
+
+                        ], width=True),#xs = 2, sm=2, md=2, lg=2),#width=2),                                 
+            dbc.Row([
+
+                html.Div([], id='tabela_populacao',
+                         className="col-4"),
+                
+            ], justify="center",),
+
+]),
         dbc.Row([
                 dbc.Col([
                     html.H5(
