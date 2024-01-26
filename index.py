@@ -78,4 +78,4 @@ def render_page_content(pathname, login_state, register_state):
             return login.render_layout(register_state)
     
 if __name__ == "__main__":
-    app.run_server(debug=True, port=8050)#, host="0.0.0.0")
+    app.run_server(debug=False, port=8050)#, host="0.0.0.0")
